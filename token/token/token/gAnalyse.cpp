@@ -5,10 +5,12 @@
 #include <ctype.h>
 #include <utility>
 #include <map>
+
 #include "token.h"
 #include "error.h"
 #include "gAnalyse.h"
 #include "symbol.h"
+#include "quaternion.h"
 
 using namespace std;
 
@@ -28,36 +30,58 @@ int numchar;
 int size;
 char idname[20];
 
-void factor(){
-	printf("Factor start!!!\n",wordtype);
-
+char one[20];
+char two[20];
+void real_para_table();
+void expression(char *end);
+void factor(char *end){
+	//printf("Factor start!!!\n");
+	char opa[20];
+	char geshu[20];
+	char herename[20];
 	if(wordtype == IDEN){
 		
 		//call faction   array and id
 		strcpy(idname,tbuff);
+		symbol *p = findIDEN(idname);
+		
+		strcpy(end,tbuff);
 		if(findIDEN(idname) == NULL)
 			error("can not found id");
 		token();
+
+		//数组
 		if(wordtype == LBRACK){
 			token();
-			expression();
+			strcpy(end,getTemp());
+			expression(geshu);
 			if(wordtype == RBRACK){
 				;
 			}
 			token();
+			gen(LW,idname,geshu,end);
 		}
-		else
+		else  //function
 		if(wordtype == LPARENT){
+			
+			num2String(p->size,opa);
+			strcpy(end,getTemp());
+			strcpy(herename,idname);
 			real_para_table();
+
+			gen(CALL,herename,opa,end);
 		}
 	}
 	else if(wordtype == INTCON){
-		;
+
+		//转成字符串
+		num2String(num,end);
+
 		token();
 	}
 	else if(wordtype == LPARENT){
 		token();
-		expression();
+		expression(end);
 		if(wordtype == RPARENT){
 			;
 		}
@@ -68,59 +92,83 @@ void factor(){
 	printf("Factor end$$$ \n");
 
 }
-void term(){
+void term(char *end){
+
 	printf("	Term start\n");
+	instr op = ADD;
+	char opa[20];
+	char opb[20];
+	factor(opa);
+
+	char *tem  = NULL;
+	//strcpy(end,opa);
 	while(true){
-		cout << wordtype;
-		factor();
 		if(wordtype == MULT){
+			op = MUL;
 		}
 		else if(wordtype == DIV){
+			op = DIVstr;
 		}
-		else
+		else{
+			strcpy(end,opa);
 			break;
-		token();
-	}
+		}
 
+		token();
+		factor(opb);
+
+		if(tem == NULL)
+			tem = getTemp();
+		gen(op,opa,opb,tem);
+		strcpy(opa,tem);
+	}
 	printf("	Term end\n");
 	
 }
-void expression(){
+void expression(char *end){
+
+	int minus=0;
+	char opa[20];
+	char opb[20];
+
+	
 	if(wordtype == PLUS)
 		;
 	else if(wordtype == MINU){
-		;
+		minus=1;
 	}
+
+	char *tem  = NULL;
+	instr op = NOP;
+	term(opa);
+
 	while (true)
 	{
-		printf("	Term start\n");
-		while(true){
-			cout << wordtype;
-
-			factor();
-
-			if(wordtype == MULT){
-			}
-			else if(wordtype == DIV){
-			}
-			else
-				break;
-			token();
-		}
-
-		printf("	Term end\n");
-
 		if(wordtype == PLUS)
-			;
+			op = ADD;
 		else if(wordtype == MINU){
-			;
-		}else
+			op = SUB;
+		}else{
+			strcpy(end,opa);
 			break;
+		}
 		token();
+		term(opb);
+
+
+		if(tem == NULL)
+			tem = getTemp();
+		gen(op,opa,opb,tem);
+		strcpy(opa,tem);
 	}
+
+
+	//return expz;
 }
 void condition(){
-	expression();
+	char opa[20];
+	char opb[20];
+	expression(opa);
 	switch(wordtype){
 	case LSS: 
 		break;
@@ -138,7 +186,7 @@ void condition(){
 		error("condition symbol error");
 	}
 	token();
-	expression();
+	expression(opb);
 }
 void real_para_table(){
 	if(wordtype == LPARENT)
@@ -151,10 +199,11 @@ void real_para_table(){
 	strcpy(idname,tbuff);
 	symbol * here;
 	here = findIDEN(idname);
-
+	char para[10];
 	while(true){
 		token();
-		expression();
+		
+		expression(para);
 		paracounter++;
 		if(wordtype == COMMA)
 			;
@@ -176,12 +225,13 @@ void statement(){
 	case IDEN:
 		printf("	Assign stat start\n");
 		token();
+		char assignhere[20];
 		if(wordtype == LPARENT){
 			real_para_table();
 		}
 		else if(wordtype == LBRACK){
 			token();
-			expression();
+			expression(assignhere);
 			if(wordtype == RBRACK)
 				;
 			else
@@ -190,7 +240,7 @@ void statement(){
 		}
 		if(wordtype == ASSIGN){
 			token();
-			expression();
+			expression(assignhere);
 		}
 		printf("	Assign stat end\n");
 		break;
@@ -224,6 +274,8 @@ void statement(){
 		break;
 	case FORTK:
 		token();
+		char forstart[20];
+		char forend[20];
 		if(wordtype == IDEN){
 			strcpy(idname,tbuff);
 			if(findIDEN(idname) == NULL)
@@ -239,7 +291,7 @@ void statement(){
 			error("if statement error");
 
 		token();
-		expression();
+		expression(forstart);
 
 		if(wordtype == TOTK){
 		}
@@ -250,7 +302,7 @@ void statement(){
 			error("if statement error  missing TO or DOWNTO");
 
 		token();
-		expression();
+		expression(forend);
 
 		if(wordtype == DOTK){
 			token();
@@ -282,14 +334,15 @@ void statement(){
 			error("missing '('");
 
 		token();
+		char writenum[20];
 		if(wordtype == STRCON){
 			token();
 			if(wordtype == COMMA){
-				expression();
+				expression(writenum);
 			}
 		}
 		else{
-			expression();
+			expression(writenum);
 		}
 		
 		if(wordtype == RPARENT){

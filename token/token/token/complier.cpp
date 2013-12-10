@@ -9,6 +9,7 @@
 #include "error.h"
 #include "gAnalyse.h"
 #include "symbol.h"
+#include "quaternion.h"
 using namespace std;
 
 //extern WT wordtype;
@@ -43,5 +44,10 @@ int main(int argc,char *argv[]){
 //		printf("%d %s %d \n",i,words[wordtype],wordtype);
 //	}
 	program();
+
+	quateout(input);
+	char p[10];
+	num2String(1234,p);
+	printf("%s",p);
 	return 0;
 }

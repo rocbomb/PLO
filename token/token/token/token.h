@@ -36,4 +36,5 @@ extern map<string,WT> reserved;
 void getch();
 void initMap();
 int token();
+void num2String(int x, char *p);
 #endif

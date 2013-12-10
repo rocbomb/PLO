@@ -1,14 +1,15 @@
 #ifndef _QUATE_
 #define _QUATE_
-
+#include <stdio.h>
 enum instr
 {
 	LABEL,
 	ADD,	//rd, rs, rt   //rt = rd+rs
 	SUB,	//rd, rs, rt   //rt = rd-rs
 	MUL,	//rd, rs, rt   //rt = rd*rs
-	DIV,	//	rd, rs, rt   //rt = rd/rs
-	ASSIGN,  //Src1,Des	  赋值Des=Src
+	DIVstr,	//	rd, rs, rt   //rt = rd/rs
+	NEG,	    //Src1,Des	
+	ASSIGNstr,  //Src1,Des	  赋值Des=Src
 	LST,	//	rd, rs, rt   //rd > rs 则 rt=1  否则 rt=0
 	LEST,   // 大于等于 置位
 	EQST,	//rd, rs, rt   //相等置1 否则置0
@@ -32,10 +33,8 @@ typedef struct Quate
 	char  target[20];
 	char  one[20];
 	char  two[20];
-	char  *p;
+	char  p[30];
 };
-
-extern char *temp[51];
 
 extern int instrCount;
 extern int lableCount;
@@ -45,5 +44,5 @@ void gen(instr ins, char *one,char* two, char* tar);
 void setLabel(char *p);
 char * getTemp();
 char * getlabel();
-
+void quateout(FILE *file);
 #endif

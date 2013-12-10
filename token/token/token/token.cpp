@@ -235,3 +235,18 @@ int token(){
 	printf("\n@wordtype@  %d\n",wordtype);
 	return 0;
 }
+
+void num2String(int x, char *p){
+	int i=0;
+	while(x>0){
+		p[i++] = x%10 + '0';
+		x=x/10;
+	}
+	p[i] = '\0';
+	int n =strlen(p);
+	for(int i=0;i<n; i++){
+		char a = p[i];
+		p[i] = p[n-i-1];
+		p[n-i-1] = a;
+	}
+}

@@ -1,5 +1,7 @@
 #include "quaternion.h"
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 Quate QuateTable[500];
 char *label[51]={
 	"_lab1","_lab2","_lab3","_lab4","_lab5",
@@ -27,7 +29,31 @@ char *temp[51]={
 	"_temp46","_temp47","_temp48","_temp49","_temp50",
 	"_temp51",
 };
-
+char * instrx[] = 
+{
+	"LABEL",
+	"ADD",	//rd", rs", rt   //rt = rd+rs
+	"SUB",	//rd", rs", rt   //rt = rd-rs
+	"MUL",	//rd", rs", rt   //rt = rd*rs
+	"DIV",	//	rd", rs", rt   //rt = rd/rs
+	"NEG",
+	"ASSIGN",  //Src1",Des	  赋值Des=Src
+	"LST",	//	rd", rs", rt   //rd > rs 则 rt=1  否则 rt=0
+	"LEST",   // 大于等于 置位
+	"EQST",	//rd", rs", rt   //相等置1 否则置0
+	"SST",   //小于置位
+	"SEST",  //小于等于置位
+	"BEQ", //	rd", rs", rt   //rd == rs 则跳转到rt处
+	"JMP", //   rd", rs", rt   //跳转到rd处  rs rt为零
+	"SW", //  rd", rs", rt   //保存rd 到rt+rs  rt为地址，rs为offset
+	"LW",  //  rd", rs", rt   //读取rt+rs地址处的内容 填入rs
+	"CALL",  //	rd", rs", rt   //函数调用，rd为调用函数名，rs为参数个数，rt为返回值
+	"RET",		//Des						函数返回，Des为返回值
+	"READ",  //	rd", rs", rt	 //				读入并写入rt
+	"WRITE", //  rd", rs", rt	 //			将rt输出
+	"NOP",	  //							空语句
+	"END"		//						函数结束标志
+};
 int instrCount=0;
 int lableCount = 0;
 int tempCount = 0;
@@ -46,10 +72,19 @@ void setLabel(char *p){
 	QuateTable[instrCount].one[0] ='\0';
 	QuateTable[instrCount].two[0] ='\0';
 	QuateTable[instrCount].target[0] ='\0';
-	QuateTable[instrCount].p = p;
+
+	strcpy(QuateTable[instrCount].p, p);
 	instrCount++;
 }
 
 char * getTemp(){
 	return temp[ tempCount++];
+}
+
+void quateout(FILE *file){
+	for(int i=0; i<instrCount; i++)
+	{
+		printf("%s,%s,%s,%s\n",instrx[QuateTable[i].ins],
+			QuateTable[i].one,QuateTable[i].two,QuateTable[i].target);
+	}
 }
