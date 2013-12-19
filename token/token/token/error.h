@@ -3,5 +3,5 @@
 
 extern int errornum;
 void error(char *p);
-
+void errornumOUT();
 #endif

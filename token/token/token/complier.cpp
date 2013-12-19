@@ -10,6 +10,7 @@
 #include "gAnalyse.h"
 #include "symbol.h"
 #include "quaternion.h"
+#include "quate2X86.h"
 using namespace std;
 
 //extern WT wordtype;
@@ -21,15 +22,19 @@ extern map<string,WT> reserved;
 extern bool endx;
 
 int main(int argc,char *argv[]){
-	if(argc == 2){
-		if((input = fopen(argv[1],"r"))==NULL)
+	char filename[100];
+	printf("请输入文件名：");
+	scanf("%s",filename);
+
+	if((input = fopen("qsort.pas","r"))==NULL)
 			cout<<"File doesn't exist"<<endl;
-	}
-	else if((input = fopen("input.pas","r"))==NULL)
-			cout<<"File doesn't exist"<<endl;
+
 	output = fopen("11061046_token.txt","w");
 
-
+	FILE *outSIYUANSI;
+	outSIYUANSI = fopen("quaternion.txt","w");
+	FILE *outASM;
+	outASM = fopen("out.asm","w");
 //	lnum = 1;
 //	lcounter = 0;
 //	tcount = 0;
@@ -45,9 +50,8 @@ int main(int argc,char *argv[]){
 //	}
 	program();
 
-	quateout(input);
-	char p[10];
-	num2String(1234,p);
-	printf("%s",p);
+	quateout(outSIYUANSI);
+	countoffset();
+	quate2x86(outASM);
 	return 0;
 }

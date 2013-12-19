@@ -29,6 +29,7 @@ extern char *words[];
 extern char *wordt[];
 extern int lnum,lcounter;
 extern char tbuff[80];
+extern char sbuff[80];
 extern int num;
 extern FILE *input, *output;
 extern bool endx;

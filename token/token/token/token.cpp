@@ -146,6 +146,7 @@ int token(){
 				error("wolegequ");
 			getch();
 		}
+		sbuff[i] = '\0';
 		wordtype = STRCON;
 		fprintf(output,"STRCON %s\n",sbuff);
 		getch();
@@ -167,28 +168,31 @@ int token(){
 		if(cbuff == '='){
 			wordtype = GEQ;
 			fprintf(output,"GEQ >=\n");
+			getch();
 		}
 		else{
 			wordtype = GRE;
 			fprintf(output,"GRE >\n");
 		}
-		getch();
+		
 	}
 	else if(cbuff == '<'){
 		getch();
 		if(cbuff == '='){
 			wordtype = LEQ;
 			fprintf(output,"GRE <=\n");
+			getch();
 		}
 		else if(cbuff == '>'){
 			wordtype = NEQ;
 			fprintf(output,"GRE <>\n");
+			getch();
 		}
 		else{
 			wordtype = LSS;
 			fprintf(output,"GRE <\n");
 		}
-		getch();
+		
 	}
 	else if(cbuff == '='){
 		wordtype = EQL;
@@ -232,19 +236,25 @@ int token(){
 		fprintf(output,"%s %s\n",wordt[wordtype],words[wordtype]);
 		getch();
 	}
-	printf("\n@wordtype@  %d\n",wordtype);
 	return 0;
 }
 
 void num2String(int x, char *p){
 	int i=0;
-	while(x>0){
-		p[i++] = x%10 + '0';
-		x=x/10;
+
+	if(x == 0){
+		p[0] = '0';
+		p[1] = '\0';
 	}
-	p[i] = '\0';
+	else{
+		while(x>0){
+			p[i++] = x%10 + '0';
+			x=x/10;
+		}
+		p[i] = '\0';
+	}
 	int n =strlen(p);
-	for(int i=0;i<n; i++){
+	for(int i=0;i<n/2; i++){
 		char a = p[i];
 		p[i] = p[n-i-1];
 		p[n-i-1] = a;

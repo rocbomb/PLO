@@ -10,3 +10,7 @@ void error(char *p){
 	errornum++;
 	std::cout<< "######line " << lnum << "letter "<<lcounter<< "error" << p <<std::endl;
 }
+
+void errornumOUT(){
+	printf("error  num  is %d\n", errornum);
+}

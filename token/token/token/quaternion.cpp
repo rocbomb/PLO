@@ -2,7 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-Quate QuateTable[500];
+#include "symbol.h"
+
+Quate QuateTable[1000];
 char *label[51]={
 	"_lab1","_lab2","_lab3","_lab4","_lab5",
 	"_lab6","_lab7","_lab8","_lab9","_lab10",
@@ -43,7 +45,9 @@ char * instrx[] =
 	"EQST",	//rd", rs", rt   //相等置1 否则置0
 	"SST",   //小于置位
 	"SEST",  //小于等于置位
+	"NEST",
 	"BEQ", //	rd", rs", rt   //rd == rs 则跳转到rt处
+	
 	"JMP", //   rd", rs", rt   //跳转到rd处  rs rt为零
 	"SW", //  rd", rs", rt   //保存rd 到rt+rs  rt为地址，rs为offset
 	"LW",  //  rd", rs", rt   //读取rt+rs地址处的内容 填入rs
@@ -52,7 +56,9 @@ char * instrx[] =
 	"READ",  //	rd", rs", rt	 //				读入并写入rt
 	"WRITE", //  rd", rs", rt	 //			将rt输出
 	"NOP",	  //							空语句
-	"END"		//						函数结束标志
+	"END",		//						函数结束标志
+	"PUSH",
+	"ADDR",
 };
 int instrCount=0;
 int lableCount = 0;
@@ -62,6 +68,7 @@ void gen(instr ins, char *one,char* two, char* tar){
 	strcpy(QuateTable[instrCount].one,one);
 	strcpy(QuateTable[instrCount].two,two);
 	strcpy(QuateTable[instrCount].target,tar);
+	QuateTable[instrCount].p[0] = '\0';
 	instrCount++;
 }
 char * getlabel(){
@@ -78,13 +85,54 @@ void setLabel(char *p){
 }
 
 char * getTemp(){
+	insertInt(temp[tempCount],0,VAR,INT);
 	return temp[ tempCount++];
 }
 
 void quateout(FILE *file){
 	for(int i=0; i<instrCount; i++)
 	{
-		printf("%s,%s,%s,%s\n",instrx[QuateTable[i].ins],
+		if(QuateTable[i].ins != LABEL){
+		printf("%8s,%8s,%8s,%8s\n",instrx[QuateTable[i].ins],
 			QuateTable[i].one,QuateTable[i].two,QuateTable[i].target);
+		fprintf(file,"%8s,%8s,%8s,%8s\n",instrx[QuateTable[i].ins],
+			QuateTable[i].one,QuateTable[i].two,QuateTable[i].target);
+		}
+		else{
+			printf("%s:\n",QuateTable[i].p);
+			fprintf(file,"%s:\n",QuateTable[i].p);
+		}
 	}
+}
+
+void toConst(char *p){
+	int n= strlen(p);
+	//n++;
+	while(n>=0){
+		p[n+1] = p[n];
+		n--;
+	}
+	p[0] = '#';
+}
+
+void toPoint(char *p){
+	int n= strlen(p);
+	//n++;
+	while(n>=0){
+		p[n+1] = p[n];
+		n--;
+	}
+	p[0] = '*';
+}
+
+
+//负数
+void num2Neg(char *p){
+	int n = strlen(p);
+
+	while(n>0){
+		p[n+1] = p[n];
+		n--;
+	}
+	p[1] = '-';
 }

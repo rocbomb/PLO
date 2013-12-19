@@ -1,30 +1,35 @@
 const z := 0 , x := '2';
 var x,y,m,head,n :integer;
  t,a :array[10] of integer;
-procedure ks(var a,b:integer;c,d:integer);
+
+function acb(var a:integer):integer;
+var kkk:integer;
 begin
-   a:=b
+  a := 0;
+  acb := 0
 end;
 
-function xxx(var a,b:integer):char;
-begin
- a:=z
-end;
 
 begin
-  x := z;
-  t[4] :=1+3;
+  x := -1+(-z)*x*(y-2)+a[2]ss;
+  t[4] :=1+acb(x);
+
   read(a);
+  for x:=1 to 2 do
+    a := 0;
+ 
   if a<x then
-      a:=0
+  begin
+      a:=0;
+      t := 3
+  end
 	else
 	a:=1;
-  for a:=1 downto 10 do
-	head := head+1*(head+1)/xxx(a,a);
-  while n <= head do
+  while n <= 2 do
     begin
       n := n+1
     end;
-  write("jksoaksd dsf akfde df");
+  write("abcd");
 read(head,a)
 end.
+ 

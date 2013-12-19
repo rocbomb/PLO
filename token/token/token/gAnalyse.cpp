@@ -24,6 +24,8 @@ extern FILE *input, *output;
 extern map<string,WT> reserved;
 extern bool endx;
 
+
+
 int kind = 0;
 int idtype = 0;
 int numchar;
@@ -32,8 +34,14 @@ char idname[20];
 
 char one[20];
 char two[20];
-void real_para_table();
+void real_para_table(symbolTree * hereTree);
 void expression(char *end);
+
+void findFENHAO(){
+	while(wordtype != SEMICN && wordtype != ENDTK && wordtype != ELSETK)
+		token();
+}
+
 void factor(char *end){
 	//printf("Factor start!!!\n");
 	char opa[20];
@@ -42,33 +50,43 @@ void factor(char *end){
 	if(wordtype == IDEN){
 		
 		//call faction   array and id
-		strcpy(idname,tbuff);
-		symbol *p = findIDEN(idname);
+		strcpy(herename,tbuff);
+		symbol *p = findIDEN(herename);
 		
-		strcpy(end,tbuff);
-		if(findIDEN(idname) == NULL)
-			error("can not found id");
-		token();
-
-		//数组
-		if(wordtype == LBRACK){
+		if(p->kind != PROC && p->kind != FUNCT)
+		{
+			strcpy(end,tbuff);
+			if(findIDEN(herename) == NULL)
+				error("can not found id");
 			token();
-			strcpy(end,getTemp());
-			expression(geshu);
-			if(wordtype == RBRACK){
-				;
+
+			//数组
+			if(wordtype == LBRACK){
+				token();
+				strcpy(end,getTemp());
+				
+				expression(geshu);
+				if(wordtype == RBRACK){
+					;
+				}
+				token();
+				gen(LW,herename,geshu,end);
 			}
-			token();
-			gen(LW,idname,geshu,end);
-		}
-		else  //function
-		if(wordtype == LPARENT){
-			
-			num2String(p->size,opa);
-			strcpy(end,getTemp());
-			strcpy(herename,idname);
-			real_para_table();
 
+		}else{ //函数
+			num2String(p->size,opa); //参数个数
+			if(p->kind == FUNCT){
+				//返回值
+				strcpy(end,getTemp());
+				
+			}else{
+				end[0] = '\0';
+			}
+			symbolTree* hereTree;
+			hereTree = findpf(herename);
+			token();
+			if(wordtype == LPARENT)
+				real_para_table(hereTree);
 			gen(CALL,herename,opa,end);
 		}
 	}
@@ -76,7 +94,7 @@ void factor(char *end){
 
 		//转成字符串
 		num2String(num,end);
-
+		toConst(end);
 		token();
 	}
 	else if(wordtype == LPARENT){
@@ -89,12 +107,12 @@ void factor(char *end){
 	}
 	else
 		error("factor error");
-	printf("Factor end$$$ \n");
+
 
 }
 void term(char *end){
 
-	printf("	Term start\n");
+
 	instr op = ADD;
 	char opa[20];
 	char opb[20];
@@ -122,7 +140,7 @@ void term(char *end){
 		gen(op,opa,opb,tem);
 		strcpy(opa,tem);
 	}
-	printf("	Term end\n");
+
 	
 }
 void expression(char *end){
@@ -133,14 +151,20 @@ void expression(char *end){
 
 	
 	if(wordtype == PLUS)
-		;
+		token();
 	else if(wordtype == MINU){
 		minus=1;
+		token();
 	}
 
 	char *tem  = NULL;
 	instr op = NOP;
 	term(opa);
+
+	if(minus == 1 && opa[0] != '#' )
+		gen(SUB,"#0",opa,opa);
+	else if(minus == 1)
+		num2Neg(opa);
 
 	while (true)
 	{
@@ -162,33 +186,47 @@ void expression(char *end){
 		strcpy(opa,tem);
 	}
 
+	
+
 
 	//return expz;
 }
-void condition(){
-	char opa[20];
+void condition(char *judge){
+	char opa[20]="0";
 	char opb[20];
 	expression(opa);
+	instr op;
 	switch(wordtype){
-	case LSS: 
+	case LSS:      //小于
+		op = SST;
 		break;
-	case LEQ:
+	case LEQ:     //小于等于
+		op = SEST;
 		break;
-	case NEQ:
+	case NEQ:     //不等于
+		op = NEST;
 		break;
-	case EQL:
+	case EQL:     //等于
+		op = EQST;
 		break;
-	case GEQ:
+	case GEQ:     //大于等于
+		op = LEST;
 		break;
-	case GRE:
+	case GRE:   //大于
+		op = LST;
 		break;
 	default:
 		error("condition symbol error");
 	}
+
 	token();
 	expression(opb);
+//	strcpy(judge,getTemp());
+	gen(op,opa,opb,judge);
+
 }
-void real_para_table(){
+void real_para_table(symbolTree* hereTree){
+	char parass[20];
 	if(wordtype == LPARENT)
 		;
 	else
@@ -196,14 +234,56 @@ void real_para_table(){
 	
 	//检查实在参数表的个数与类型
 	int paracounter=0;
-	strcpy(idname,tbuff);
-	symbol * here;
-	here = findIDEN(idname);
-	char para[10];
+	strcpy(parass,tbuff);
+	symbol * here,*p;
+	here = findIDEN(parass);
+
+	char para[20][20];
 	while(true){
 		token();
-		
-		expression(para);
+		if(hereTree->symBol[paracounter].kind == POINTER)
+		{
+			int arrayFlag=0;
+			char tar[20];
+			strcpy(idname,tbuff);
+			strcpy(tar,tbuff);
+			p = findIDEN(idname);
+			token();
+			char assignhere[20];
+
+			char offset[20];
+			//if(arrayFlag == 0)
+
+			if(p->kind == FUNCT){
+				para[paracounter][0] = '@';
+				para[paracounter][1] = '\0';
+				strcat(para[paracounter],tar);
+			}
+			else {
+				if(wordtype == LBRACK){
+					arrayFlag = 1;
+					token();
+					expression(offset);
+					if(wordtype == RBRACK)
+						;
+					token();
+				}
+
+				if(arrayFlag == 1){
+					strcpy(assignhere,getTemp()); //临时变量
+					gen(ADDR,tar,offset,assignhere); //
+					strcpy(para[paracounter],assignhere);
+				}
+				else{
+					para[paracounter][0] = '@';
+					para[paracounter][1] = '\0';
+					strcat(para[paracounter],tar);
+				}
+			}
+		}
+		else
+			expression(para[paracounter]);
+//		gen(PUSH,para[paracounter],"","");
 		paracounter++;
 		if(wordtype == COMMA)
 			;
@@ -213,6 +293,10 @@ void real_para_table(){
 	if(paracounter != here->size){
 		error("实在参数表个数错误");
 	}
+	//反向压入栈
+	while(paracounter--){
+		gen(PUSH,para[paracounter],"","");
+	}
 	if(wordtype == RPARENT)
 		;
 	else
@@ -220,147 +304,288 @@ void real_para_table(){
 	token();
 }
 void statement(){
-	cout<<"statement analyse start  "<<wordtype<<"\n";
+	int arrayFlag = 0;
+	symbol *p;
+
+	char one[20];
+	char two[20];
+	char three[20];
+
 	switch (wordtype){
 	case IDEN:
-		printf("	Assign stat start\n");
+
+		char tar[20];
+
+		strcpy(idname,tbuff);
+		strcpy(tar,tbuff);
+		p = findIDEN(idname);
+		
 		token();
 		char assignhere[20];
-		if(wordtype == LPARENT){
-			real_para_table();
+
+		char offset[20];
+		//if(arrayFlag == 0)
+
+		if(p->kind == PROC){
+			//寻找PROC的树
+			symbolTree* hereTree;
+			hereTree = findpf(idname);
+			if(wordtype == LPARENT)
+				real_para_table(hereTree);
+			num2String(p->size,offset);
+			gen(CALL,tar,offset,"");
 		}
-		else if(wordtype == LBRACK){
-			token();
-			expression(assignhere);
-			if(wordtype == RBRACK)
-				;
+		else {
+			if(wordtype == LBRACK){
+
+				arrayFlag = 1;
+				token();
+				expression(offset);
+
+				if(wordtype == RBRACK)
+					;
+				else{
+					error("array mising ']'");
+					findFENHAO();
+					goto statend;
+				}
+				token();
+			}
+			if(wordtype == ASSIGN || wordtype == EQL){
+				if(wordtype == EQL){
+					error(" = 自动补齐为 ：= ");
+				}
+				token();
+				expression(assignhere);
+
+				if(wordtype != SEMICN && wordtype != ENDTK && wordtype != ELSETK){
+					error("赋值语句错误");
+					findFENHAO();
+				}
+			}
+			if(arrayFlag == 1)
+				gen(SW ,tar,offset,assignhere);
 			else
-				error("array mising ']'");
-			token();
+				gen(ASSIGNstr,assignhere,"",tar);
+
 		}
-		if(wordtype == ASSIGN){
-			token();
-			expression(assignhere);
-		}
-		printf("	Assign stat end\n");
+
 		break;
 	case IFTK:
 		token();
-		condition();
+		char one[20];
+		
+
+		char *end1;
+		char *end2;
+		end1 = getlabel();
+		condition(end1);
+//		gen(BEQ,one,"#0",end1);
+
 		if(wordtype == THENTK)
 			;
-		else
+		else{
 			error("if statement missing then");
-
+			findFENHAO();
+			goto statend;
+		}
 		token();
 		statement();
 		if(wordtype == ELSETK){
 			token();
+			end2 = getlabel();
+			gen(JMP,"","",end2);
+			setLabel(end1);
+			
 			statement();
-		}
+
+			setLabel(end2);
+			
+		}else
+			setLabel(end1);
 		break;
 	case WHILETK:
-		printf("!!!!WHILETK start\n");
+		char *startwhile;
+		char *endwhile;
+
+		startwhile = getlabel();
+		endwhile = getlabel();
+
+		setLabel(startwhile);
+
+
 		token();
-		condition();
+		
+
+		char judge[20];
+		condition(endwhile);
+		
+//		gen(BEQ,judge,"#0",endwhile);
+
 		if(wordtype == DOTK){
 			token();
 			statement();
 		}
-		else
+		else{
 			error("while statement missing \"do\"");
+			findFENHAO();
+			goto statend;
+		}
+		gen(JMP,"","",startwhile);
+		setLabel(endwhile);
 
-		printf("$$$$$WHILETK end\n");
 		break;
 	case FORTK:
 		token();
-		char forstart[20];
-		char forend[20];
+		char *forstart;
+		char *forend;
+		char *forloop ;
+		char *forcount;
+		char stari[20];
+		char starA[20];
+		char endA[20];
+		forstart = getlabel();
+		forend = getlabel();
+		forloop = getlabel();
+		forcount = getlabel();
+
+		instr loopop;
 		if(wordtype == IDEN){
-			strcpy(idname,tbuff);
-			if(findIDEN(idname) == NULL)
+			strcpy(starA,tbuff);
+
+			if(findIDEN(starA) == NULL)
 				error("can not found id");	
 		}
-		else
+		else{
 			error("if statement error");
-
+			findFENHAO();
+			goto statend;
+		}
 		token();
 		if(wordtype == ASSIGN)
 			;
-		else
+		else{
 			error("if statement error");
-
+			findFENHAO();
+			goto statend;
+		}
 		token();
-		expression(forstart);
+		expression(stari);
+		//for i=0 赋值
+		gen(ASSIGNstr,stari,"",starA);
+
 
 		if(wordtype == TOTK){
+			loopop = ADD;
 		}
 		else if(wordtype == DOWNTOTK)
 		{
+			loopop = SUB;
 		}
 		else
 			error("if statement error  missing TO or DOWNTO");
 
+		//判断部分
+		setLabel(forloop);
+
 		token();
-		expression(forend);
+		expression(endA);
+
+		char *fortemp;
+		fortemp = getTemp();
+		if(loopop == ADD)
+			gen(SEST,starA,endA,forend);
+		else
+			gen(LEST,starA,endA,forend);
+		//gen(BEQ,fortemp,"#0",forend);
+		gen(JMP,"","",forstart);
+
+		//add ++ OR --
+		setLabel(forcount);
+		gen(loopop,starA,"#1",starA);
+		gen(JMP,"","",forloop);
 
 		if(wordtype == DOTK){
+			
+
+			//statement start
+			setLabel(forstart);
 			token();
 			statement();
-		}
-		else
-			error("if statement error \"do\"");
 
+			//for stat end  跳转
+			gen(JMP,"","",forcount);
+			setLabel(forend);
+		}
+		else{
+			error("if statement error \"do\"");
+			findFENHAO();
+			goto statend;
+		}
 		break;
 	case BEGINTK:
-		printf("mult statment start\n");
+
 		while(true){
 			token();
 			statement();
 			if (wordtype != SEMICN)
 				break;
 		}
-		printf("come\n");
+
 		if(wordtype != ENDTK)
 			error("lost endTK");
 		else token();
 
-		printf("mult statment end\n");
 		break;
 	case WRITETK:
 		token();
 		if(wordtype == LPARENT){
-		}else
+		}else{
 			error("missing '('");
-
+			findFENHAO();
+			goto statend;
+		}
 		token();
 		char writenum[20];
+		char *strname;
 		if(wordtype == STRCON){
+
 			token();
+			strname = insertStr("string",sbuff,STRCON);
+			gen(WRITE,"","",strname);
 			if(wordtype == COMMA){
 				expression(writenum);
+
+				//write("sss",a);
+
+				gen(WRITE,"","",writenum);
 			}
 		}
 		else{
 			expression(writenum);
+			gen(WRITE,"","",writenum);
 		}
 		
 		if(wordtype == RPARENT){
-		}else
+		}else{
 			error("missing '('");
-
+			findFENHAO();
+			goto statend;
+		}
 		token();
 		break;
 
 
 	case READTK:
-		printf("Read stat start\n");
+
 		token();
 		if(wordtype == LPARENT)
 			;
-		else
+		else{
 			error("read statement missing '('");
-		
+			findFENHAO();
+			goto statend;
+		}
 		do{
 			;
 			token();
@@ -369,23 +594,38 @@ void statement(){
 			if(findIDEN(idname) == NULL)
 				error("can not found id");		
 			}
-			else
+			else{
 				error("read statement parameter error");
+				findFENHAO();
+				goto statend;
+			}
 			token();
+
+			gen(READ,"","",idname);
+
 		}while(wordtype == COMMA);
 
 		if(wordtype == RPARENT)
 			;
-		else
+		else{
 			error("read statement missing ')'");
-
+			findFENHAO();
+			goto statend;
+		}
 		token();
-		printf("Read stat END\n");
+
 		break;
-	default:
+	case SEMICN:
+		break;
+	case ENDTK:
+		break;
+	default:{
 		error("statement error");
-	cout<<"statement succeed\n";
+		findFENHAO();
+		}
 	}
+	statend:
+	;
 }
 void basic_type(){
 	if(wordtype == INTTK)
@@ -454,9 +694,10 @@ void parameter_table(){
 
 }
 void type(){
+	size = 0;
 	if(wordtype == ARRAYTK){
 		token();
-		size = 0;
+		
 		if(wordtype == LBRACK){
 			token();
 			if(wordtype == INTCON)
@@ -516,7 +757,7 @@ void constX(){
 void block(){
 	cout<<"block analyse start\n";
 	if(wordtype == CONSTTK){
-		cout<<"const start\n";
+
 		token();
 		while(true){
 			//tbuff 标示符名称
@@ -525,11 +766,9 @@ void block(){
 				error("");
 			strcpy(idname,tbuff);
 			token();
-			if(wordtype != ASSIGN)
-				error(" lost assign ");
-			if(wordtype == EQL){
-				error(" = error  auto change to ：= ");
-				wordtype = ASSIGN;
+			if(wordtype != EQL){
+				error(" = error ");
+				wordtype = EQL;
 			}
 
 			token();
@@ -544,18 +783,23 @@ void block(){
 				token();
 				break;
 			}else
-				error("");
+				error("CONST缺失分号，自动补齐");
 		}
-		cout<<"const end\n";
+constend:
+		;
+
 	}
 	if(wordtype == VARTK){
-		cout<<"var start\n";
+
 		token();
 		int varcounter=0;
 		while(true){
 			varcounter++;  // '：' 前记录几个变量
-			if(wordtype != IDEN)
+			if(wordtype != IDEN){
 				error("var def id error");
+				findFENHAO();
+				goto varend;
+			}
 			strcpy(idname,tbuff);
 			token();
 			insertInt(idname,0,VAR,INT); //先默认为0 整型
@@ -566,12 +810,14 @@ void block(){
 			
 			if(wordtype == COLON){
 				token();
-			}else
+			}else{
 				error("var define lost : ");
-			
+				findFENHAO();
+				goto varend;
+			}
 			type();
 			if(wordtype != SEMICN)
-				error("");
+				error("VAR 丢失分号，自动添加");
 
 			addTYPE(varcounter,idtype,size);
 			varcounter = 0;
@@ -582,7 +828,9 @@ void block(){
 				break;
 			}
 		}
-		cout<<"var end\n";
+varend:
+		;
+
 	}
 	if(wordtype == PROCETK || wordtype == FUNCTK){
 		while(true){
@@ -592,16 +840,32 @@ void block(){
 				kind = PROC;
 				
 				if(wordtype != IDEN)
-					error("procedure id lost");
+					error("procedure id error");
 				//复制过程名
 				strcpy(idname,tbuff);
+
+
+				/**
+				*设置标签  过程名 + _label
+				*/
+				char proclabel[50];
+				char procname[50];
+				strcpy(procname,tbuff);
+				strcpy(proclabel,"[st]");
+				strcat(proclabel,procname);
+//				strcat(proclabel,"_label");
+				setLabel(proclabel);
+
 				insertAPF(idname,0,kind);
 				token();
 				if(wordtype == LPARENT)
 					parameter_table();
 				else if(wordtype == SEMICN)
-					;
-				else error("procedure");
+					addParentSize(0);
+				else {
+					error("procedure");
+					findFENHAO();
+				}
 				if(wordtype != SEMICN){
 					error("lost ; \n");
 				}
@@ -609,7 +873,10 @@ void block(){
 				block();
 				if(wordtype != SEMICN)
 					error("");
-				printf("procedure Stat Succeed\n");
+				//proc 和 function 结束
+				strcpy(proclabel,"[ed]");
+				strcat(proclabel,procname);
+				setLabel(proclabel);
 
 				symbacklv(); //符号表返回上一层
 			}
@@ -620,13 +887,21 @@ void block(){
 					error("procedure id lost");
 				strcpy(idname,tbuff);
 
+				char funclabel[50];
+				char funcname[50];
+				strcpy(funcname,tbuff);
+				strcpy(funclabel,"[st]");
+				strcat(funclabel,funcname);
+//				strcat(funclabel,"_label");
+				setLabel(funclabel);
+
 				insertAPF(idname,0,kind);  //添加function 的符号表
 				token();
 				if(wordtype == LPARENT)
 					parameter_table();
 				else if(wordtype == COLON)
-					;
-				else error("procedure");
+					addParentSize(0);
+				else error("function");
 				
 				//function的类型添加
 				token();
@@ -638,8 +913,15 @@ void block(){
 					error("FUNCTK error");
 				token();
 				block();
-				if(wordtype != SEMICN)
+				if(wordtype != SEMICN){
 					error("lost ; error");
+				}
+
+				//proc 和 function 结束
+				strcpy(funclabel,"[ed]");
+				strcat(funclabel,funcname);
+				setLabel(funclabel);
+
 				symbacklv(); //符号表返回上一层
 			}
 
@@ -650,8 +932,13 @@ void block(){
 		}
 	}
 
+	//代码段真正开始
+	strcpy(idname,"[bg]");
+	strcat(idname,symTree->name);
+	setLabel(idname);
+	
 	if(wordtype == BEGINTK){
-		printf("mult statment start\n");
+
 		
 		while(true){
 			token();
@@ -662,16 +949,16 @@ void block(){
 		if(wordtype != ENDTK)
 			error("lost endTK");
 		else token();
-
-		printf("mult statment end\n");
 	}
-	printf("block Succeed\n");
 
+
+	printf("block Succeed\n");
 }
 void program(){
 	token();
 	block();
 	if(wordtype != PERIOD)
 		error("lost a '.'\n");
+	setLabel("end_main");
 	printf("\n#########gAnalyse Succeed#########\n");
 }

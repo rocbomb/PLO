@@ -1,0 +1,89 @@
+[st]qsort:
+[st]swap:
+[bg]swap:
+  ASSIGN,       i,        ,    temp
+  ASSIGN,       j,        ,       i
+  ASSIGN,    temp,        ,       j
+[ed]swap:
+[bg]qsort:
+  ASSIGN,       l,        ,       i
+  ASSIGN,       h,        ,       j
+     ADD,       i,       j,  _temp2
+     DIV,  _temp2,      #2,  _temp3
+      LW,       a,  _temp3,  _temp1
+  ASSIGN,  _temp1,        ,       m
+_lab1:
+     SST,       i,       j,   _lab2
+_lab3:
+      LW,       a,       i,  _temp4
+     SST,  _temp4,       m,   _lab4
+     ADD,       i,      #1,  _temp5
+  ASSIGN,  _temp5,        ,       i
+     JMP,        ,        ,   _lab3
+_lab4:
+_lab5:
+      LW,       a,       j,  _temp6
+     SST,       m,  _temp6,   _lab6
+     SUB,       j,      #1,  _temp7
+  ASSIGN,  _temp7,        ,       j
+     JMP,        ,        ,   _lab5
+_lab6:
+    SEST,       i,       j,   _lab7
+    ADDR,       a,       i,  _temp8
+    ADDR,       a,       j,  _temp9
+    PUSH,  _temp9,        ,        
+    PUSH,  _temp8,        ,        
+    CALL,    swap,       2,        
+     ADD,       i,      #1, _temp10
+  ASSIGN, _temp10,        ,       i
+     SUB,       j,      #1, _temp11
+  ASSIGN, _temp11,        ,       j
+_lab7:
+     JMP,        ,        ,   _lab1
+_lab2:
+     LST,       j,       l,   _lab8
+    PUSH,       j,        ,        
+    PUSH,       l,        ,        
+    CALL,   qsort,       2,        
+_lab8:
+     SST,       i,       h,   _lab9
+    PUSH,       h,        ,        
+    PUSH,       i,        ,        
+    CALL,   qsort,       2,        
+_lab9:
+[ed]qsort:
+[bg]main:
+   WRITE,        ,        ,   @str0
+    READ,        ,        ,     num
+  ASSIGN,      #1,        ,   index
+_lab12:
+    SEST,   index,     num,  _lab11
+     JMP,        ,        ,  _lab10
+_lab13:
+     ADD,   index,      #1,   index
+     JMP,        ,        ,  _lab12
+_lab10:
+   WRITE,        ,        ,   @str1
+    READ,        ,        ,    temp
+     SUB,   index,      #1, _temp13
+      SW,       a, _temp13,    temp
+     JMP,        ,        ,  _lab13
+_lab11:
+     SUB,     num,      #1, _temp14
+    PUSH, _temp14,        ,        
+    PUSH,      #0,        ,        
+    CALL,   qsort,       2,        
+  ASSIGN,      #0,        ,   index
+_lab16:
+     SUB,     num,      #1, _temp15
+    SEST,   index, _temp15,  _lab15
+     JMP,        ,        ,  _lab14
+_lab17:
+     ADD,   index,      #1,   index
+     JMP,        ,        ,  _lab16
+_lab14:
+      LW,       a,   index, _temp17
+   WRITE,        ,        , _temp17
+     JMP,        ,        ,  _lab17
+_lab15:
+end_main:

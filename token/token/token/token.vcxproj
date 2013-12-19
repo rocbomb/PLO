@@ -79,6 +79,7 @@
     <ClCompile Include="complier.cpp" />
     <ClCompile Include="error.cpp" />
     <ClCompile Include="quaternion.cpp" />
+    <ClCompile Include="qutae2X86.cpp" />
     <ClCompile Include="symbol.cpp" />
     <ClCompile Include="token.cpp" />
     <ClCompile Include="gAnalyse.cpp" />
@@ -86,6 +87,7 @@
   <ItemGroup>
     <ClInclude Include="error.h" />
     <ClInclude Include="gAnalyse.h" />
+    <ClInclude Include="quate2X86.h" />
     <ClInclude Include="quaternion.h" />
     <ClInclude Include="token.h" />
     <ClInclude Include="symbol.h" />
